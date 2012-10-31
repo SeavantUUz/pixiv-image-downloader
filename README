@@ -1,0 +1,14 @@
+这个程序是一个简单的命令行式的pixiv图片下载器，支持根据画师ID解析并下载这个画师的画作。
+请注意，不支持下载漫画，只能下载图片。
+附有源代码和编译过的版本，支持跨平台，有标注，请使用对应系统的可执行文件。
+支持配置文件，也支持命令行解析。命令行优先级高于配置文件优先级。
+使用方式，以Linux系统为例：
+1.切换到文件的路径
+2. ./pixivDownloader_Linux.exe -d 查看中文帮助文档
+3. ./pixivDownloader_Linux.exe -h 英文的简要说明
+4. ./pixivDownloader_Linux.exe -a xxxxx -p xxxxx -i xxxx -o 'Linux' -b '' -s 填写p站帐号(-a)，密码(-p),画师ID(-i),系统名称(-o),存放地址(-b 默认是当前目录),保存(-s)
+5. 第一次填写后，保存之后，以后就可以只填写画师ID了……
+
+如果有问题，bug，请邮件 axdiaoqi220@gmail.com
+Author: 风笳
+Date：2012-10-31 20:54:59 

@@ -27,32 +27,29 @@
 import mechanize
 import re
 import os
+import urllib2
 import time
+import sys
+import optparse
+import ConfigParser
+import platform
+from initConfig import *
 
+
+	
 _cookie = mechanize.CookieJar()
+
+if platform.system() == 'Linux':
+	typeCode = 'UTF-8'
+elif platform.system() == 'Windows':
+	typeCode = 'gb2312'
+else:
+	print "Sanae could not run on your system..."
+	sys.exit(1)
+	
 
 #-----------------所有的配置在这里填写---------------------------------
 user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en; rv:1.9.1.5) Gecko/20091102 Firefox/3.5.5'
-account = '' #p站账号
-password = '' #密码
-basepath = '' #文件存放的根目录位置,默认的我是放到这个脚本的目录来着,请注意，如果不为空的字符串，末尾请务必加上/,如 /media/
-CSID = 61513 #这个是你想要下载的画师的id,变量名意思是“触手ID”，恩……
-
-
-
-##这个函数执行初始化，登录以及提交表单的作用，值得注意的是，国内访问pixiv可能返回慢连接错误，这是不可抗力……
-
-def _initialize(browser):
-	browser.set_cookiejar(_cookie)
-	browser.addheaders = [('User-Agent',user_agent)]
-	print '早苗已经收到指示，开始进行初始化设定,请稍等的说……'
-	if not len(_cookie):
-		browser.open("https://ssl.pixiv.net/login.php")		
-		browser.select_form(nr = 1)
-		browser["pixiv_id"] = account
-		browser["pass"] = password
-		browser.submit()
-		print '成功登录，早苗正在寻找图片下载，请注意哦，H是不可以的～'
 
 #这里通过一个正则表达式去找到当前页中所有的图片链接，返回是一个四元素的元组
 def _getImgUrl(page):
@@ -69,14 +66,9 @@ def _getPageUrl(page):
 	return page_url
 
 #收集所有的图片链接，返回
-def _collectImgUrl(page_url,img_url):
-	for url in page_url:
-		url = 'http://www.pixiv.net/'+url
-		response = browser.open(url)
-		img_url += _getImgUrl(response.read())
-	return img_url
 
-def _downloader(img_url,records_url,imgCount,infofile):
+
+def _downloader(img_url,records_url,imgCount,infofile,account,basepath,OsName):
 	count = 0
 	try:
 		for element in img_url:
@@ -87,41 +79,212 @@ def _downloader(img_url,records_url,imgCount,infofile):
 			if url in records_url:
 				continue
 			else:
-				wget = 'wget ' + url + ' -O ' + basepath  + dirname + '/' + filename + ' --referer=http://www.pixiv.net/'
-				os.system(wget)
+				imgPath = os.path.join(basepath, dirname, filename)
+				if OsName == 'Linux':
+					wget = 'wget ' + url + ' -O ' + imgPath + ' --referer=http://www.pixiv.net/'
+					os.system(wget)
+				elif OsName == 'Windows':
+					req = urllib2.Request(url)
+					req.add_header("Referer","http://www.pixiv.net")
+					imgData = urllib2.urlopen(req)
+					f = open(imgPath,'w')
+					f.write(imgData.read())
+					f.close()
+				else:
+					print '''
+		早苗诞生时间不长呢，这个系统我不认识哦～～～我只认识 Windows 和 Linux 系统哦，全小写我也不认识（笑，吐舌）'''.decode('UTF-8').encode(typeCode)
+					print ''
+
 			infofile.write(url+'\n')
 			count += 1
-			print '下载进度 %d/%d\n' % (count,imgCount)
+			print '下载进度 %d/%d\n'.decode('UTF-8').encode(typeCode) % (count,imgCount)
 			time.sleep(5)
 	except KeyboardInterrupt:
 		infofile.close()
 	infofile.close()
-	if account == 'zengli220@163.com' or account == 'axdiaoqi220@gmail.com':
-		print '主人,我工作做完了，今天也能一起睡么？（害羞|扭扭捏捏……）恩，可以啊？早苗好开心～～'
+	if account == 'axdiaoqi220@gmail.com':
+		print '''
+		主人,我工作做完了，今天也能一起睡么？（害羞|扭扭捏捏……）
+		恩，可以啊？
+		早苗好开心～～'''.decode('UTF-8').encode(typeCode)
+		print ''
 	else:
-		print '做完了～～主人叫我回家睡觉了，早苗得去照顾他，下次再见了～～'
+		print '''
+		做完了～～主人叫我回家睡觉了，早苗得去照顾他，下次再见了～～'''.decode('UTF-8').encode(typeCode)
+		print ''
+
+
+def _parserInput():
 	
-browser = mechanize.Browser()
-_initialize(browser)
+	##这个是三无状态（笑），第一次使用，然后不知道怎么用
+	if sys.argv[1:] == []:
+		if os.path.isfile('Sanae.ini') == False:
+			print ''
+			print '''
+		不会使用？主人建议早苗告诉你，请输入 
+		python pixivDownloader.py -d 
+		或者 输入 python pixcDownloader.py -h 
+		试试哦，或者看看主人写的文档～'''.decode('UTF-8').encode(typeCode)
+			print ''
+			sys.exit(1)
+			
+	config = ConfigParser.SafeConfigParser()
+	##当没有配置文件时，给一个默认的配置文件
+	##读取配置文件
+	if config.read('Sanae.ini') == []:
+		print '''
+		早苗建立了一个配置文件，但是这只是默认的哦，
+		还需要在命令行传入参数的~~'''.decode('UTF-8').encode(typeCode)
+		print ''
+		fp = open('Sanae.ini','w')
+		config.add_section('info')
+		config.set('info','account','')
+		config.set('info','password','')
+		config.set('info','os','Linux')
+		config.set('info','CSID','')
+		config.set('info','basepath','')
+		config.write(fp)
+		fp.close()
 
-response = browser.open('http://www.pixiv.net/member_illust.php?id=%d' % CSID)
-img_url = _collectImgUrl(_getPageUrl(response.read()),_getImgUrl(response.read()))
+	##防止初次使用或者不熟悉的用户输入错误
+		
 
-#这里声明三个后面需要的变量，img_url是所有图片的集合，imgCount是图片是数目,authorName是存放的文件夹的名称
-#不知为何会有重复链接出现，姑且通过集合的手段去除掉
-img_url = list(set(img_url))
-imgCount = len(img_url)
-authorName = img_url[0][1]
-print "累了……但是早苗一共找到了%d幅图片哦～～今天早苗也很努力呢（奋斗ing～）" % imgCount
+			
+			
+	usage = "usage: %prog [options] arg1 arg2"
+	##使用下面的代码解析用户传入
+	parser = optparse.OptionParser(usage)
 
-#判断是不是下过这个画师的图，没下过的话建目录，然后建一个记录文档
-if os.path.isdir(basepath+authorName):
-	infofile = open(basepath+authorName+'/urlinfo.sanae','r+')
-	records_url = infofile.read().split()
-else:
-	os.mkdir(basepath+authorName)
-	infofile = open(basepath+authorName+'/urlinfo.sanae','w')
-	records_url = []
 	
-_downloader(img_url,records_url,imgCount,infofile)
+	parser.add_option('-a','--account',dest = 'account',
+						action = 'store',default = config.get('info','account'),
+						help = 'Your account of pixiv.net')
+						
+	parser.add_option('-p','--password',dest = 'password',
+						action = 'store',default = config.get('info','password'),
+						help = 'Your password of pixiv.net')
 
+	parser.add_option('-o','--os',dest = 'os',action = 'store',
+						default = config.get('info','os'),
+						help = "The OS's name,'Linux' or 'Windows'")
+						
+	parser.add_option('-i','--id',dest = 'CSID',action = 'store',
+						default = config.get('info','CSID'),
+						help = "The drawer's ID which you are trying to download")
+						
+	parser.add_option('-b','--basepath',dest = 'basepath',action = 'store',
+						default = config.get('info','basepath'),
+						help = "The root path of your image-dirs")
+						
+	parser.add_option('-s','--save',dest = 'save',action = 'store_true',
+						default = False,
+						help ='Save your configration into local_computer')
+						
+	parser.add_option('-d','--detail',dest = 'detail',action = 'store_true',
+						default = False,
+						help = 'Print detail information by Chinese')
+
+
+	options,remainder = parser.parse_args()
+	
+	
+	return options
+
+
+	
+			
+def main():	
+
+
+
+	options = _parserInput()
+	print '''
+		早苗接受了你的输入，正在检查，马上告诉你结果~'''.decode('UTF-8').encode(typeCode)
+	print ''
+
+	if checkInput(options):	
+		account = options.account
+		password = options.password
+		OsName = options.os
+		CSID = options.CSID
+		basepath = options.basepath
+		if options.save:
+			writeToConfig(account,password,OsName,CSID,basepath)
+	else:
+		sys.exit(1)
+	
+	print '''
+		早苗检查完成!马上为您连接~~'''.decode('UTF-8').encode(typeCode)
+	
+	browser = mechanize.Browser()
+	print '''
+		浏览器准备完成'''.decode('UTF-8').encode(typeCode)
+	print ''
+	browser.set_cookiejar(_cookie)
+	print '''
+		cookie准备完成'''.decode('UTF-8').encode(typeCode)
+	print ''
+	browser.addheaders = [('User-Agent',user_agent)]
+	print '''
+		早苗已经收到指示，开始进行初始化设定,请稍等的说……'''.decode('UTF-8').encode(typeCode)
+	print ''
+	
+	##唉呀呀，真是不良的习惯……懒得用类封装全局变量，闭包上……
+	def _collectImgUrl(page_url,img_url):
+		for url in page_url:
+			url = 'http://www.pixiv.net/'+url
+			response = browser.open(url)
+			img_url += _getImgUrl(response.read())
+		return img_url
+	
+	
+	if not len(_cookie):
+		browser.open("https://ssl.pixiv.net/login.php")		
+		browser.select_form(nr = 1)
+		browser["pixiv_id"] = account
+		browser["pass"] = password
+		browser.submit()
+		print '''
+		成功登录，早苗正在寻找图片下载，请注意哦，H是不可以的～'''.decode('UTF-8').encode(typeCode)
+		print ''
+
+	
+	
+	response = browser.open('http://www.pixiv.net/member_illust.php?id=%s' % CSID)
+	img_url = _collectImgUrl(_getPageUrl(response.read()),_getImgUrl(response.read()))
+
+	#这里声明三个后面需要的变量，img_url是所有图片的集合，imgCount是图片是数目,authorName是存放的文件夹的名称
+	#不知为何会有重复链接出现，姑且通过集合的手段去除掉
+	img_url = list(set(img_url))
+	imgCount = len(img_url)
+	
+	print '''
+		早苗一共找到了%d幅图片哦～～今天早苗也很努力呢（奋斗ing～）'''.decode('UTF-8').encode(typeCode)% imgCount
+	print ''
+	try:
+		authorName = img_url[0][1]
+	except IndexError:
+		print '''
+		请确认您的帐号密码是否正确，或者是画师ID，早苗确定
+		某个信息您填写错了~~~'''.decode('UTF-8').encode(typeCode)
+		sys.exit(1)
+	#判断是不是下过这个画师的图，没下过的话建目录，然后建一个记录文档
+	
+	if os.path.isdir(os.path.join(basepath,authorName)):
+		infofile = open(os.path.join(basepath,authorName,'urlinfo.sanae'),'r+')
+		records_url = infofile.read().split()
+	else:
+		os.mkdir(os.path.join(basepath,authorName))
+		infofile = open(os.path.join(basepath,authorName,'urlinfo.sanae'),'w')
+		records_url = []
+	
+	_downloader(img_url,records_url,imgCount,infofile,account,basepath,OsName)
+	
+
+	
+	
+
+
+if __name__ == '__main__':
+
+	main()
