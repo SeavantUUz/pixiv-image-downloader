@@ -238,7 +238,7 @@ def Download(*args):
 
     for url in image_urls:
         ## 每下载十张图片存档一次
-        if not count % 0:
+        if not count % 10:
             with codecs.open('_downloaderImage.sanae','wb','utf-8') as f:
                 pickle.dump(record_urls,f)
 
