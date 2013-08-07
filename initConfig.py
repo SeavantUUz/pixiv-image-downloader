@@ -33,52 +33,52 @@ def checkInput(options):
 		return False
 	if options.account == '' or options.password == '':
 		print '''
-		早苗发现您的输入不太对哦，主人让早苗转告您，
-		帐号和密码是必须输入的，重新输入吧，或者再调用 
-		python pixivDownloader -d 看看主人的说明'''.decode('UTF-8').encode(get_encode())
+	    早苗发现您的输入不太对哦，主人让早苗转告您，
+	    帐号和密码是必须输入的，重新输入吧，或者再调用 
+	    python pixivDownloader -d 看看主人的说明'''.decode('UTF-8').encode(get_encode())
 		print ''
 		return False
 	if options.CSID == '':
 		print '''
-		哎嘿嘿，您不输入画师ID的话，早苗也不知道你要找谁啊，
-		再看看主人的说明吧,
-		python pixivDownloader -d'''.decode('UTF-8').encode(get_encode())
+	    哎嘿嘿，您不输入画师ID的话，早苗也不知道你要找谁啊，
+	    再看看主人的说明吧,
+	    python pixivDownloader -d'''.decode('UTF-8').encode(get_encode())
 		print ''
 		return False
 	if options.os == 'Linux':
 		print '''
-		主人要求早苗向您确认一下，您的系统真的是Linux么？
-		这项由于是默认值，总有人搞错……搞错就没法用了啊~'''.decode('UTF-8').encode(get_encode())
+	    主人要求早苗向您确认一下，您的系统真的是Linux么？
+	    这项由于是默认值，总有人搞错……搞错就没法用了啊~'''.decode('UTF-8').encode(get_encode())
 		a = raw_input('''
-		早苗向您确认您的系统是否真是Linux (y/n):'''.decode('UTF-8').encode(get_encode()))
+	    早苗向您确认您的系统是否真是Linux (y/n):'''.decode('UTF-8').encode(get_encode()))
 		if a.lower() == 'y' or a.lower() == 'yes':
 			return True
 		elif a.lower() == 'n' or a.lower() == 'no':
 			print '''
-		主人担心对了～～主人好厉害～'''.decode('UTF-8').encode(get_encode())
+	    主人担心对了～～主人好厉害～'''.decode('UTF-8').encode(get_encode())
 			print ''
 			options.os = 'Windows'
 			return True
 		else:
 			print '''
-		这是什么？早苗虽然英语很好，但是这个早苗不认识~'''.decode('UTF-8').encode(get_encode())
+	    这是什么？早苗虽然英语很好，但是这个早苗不认识~'''.decode('UTF-8').encode(get_encode())
 			return False 
 	if options.os == 'Windows':
 		print '''
-		主人要求早苗向您确认一下，您的系统真的是Windows么？
-		这项由于是默认值，总有人搞错……搞错就没法用了啊~'''.decode('UTF-8').encode(get_encode())
+	    主人要求早苗向您确认一下，您的系统真的是Windows么？
+	    这项由于是默认值，总有人搞错……搞错就没法用了啊~'''.decode('UTF-8').encode(get_encode())
 		a = raw_input('''
-		早苗向您确认您的系统是否真是Windows (y/n):'''.decode('UTF-8').encode(get_encode()))
+	    早苗向您确认您的系统是否真是Windows (y/n):'''.decode('UTF-8').encode(get_encode()))
 		if a.lower() == 'y' or a.lower() == 'yes':
                         return True
 		elif a.lower() == 'n' or a.lower() == 'no':
 			print '''
-		主人担心对了～～主人好厉害～'''.decode('UTF-8').encode(get_encode())
+	    主人担心对了～～主人好厉害～'''.decode('UTF-8').encode(get_encode())
 			options.os = 'Linux'
 			return True
 		else:
 			print '''
-		这是什么？早苗虽然英语很好，但是这个我不认识~'''.decode('UTF-8').encode(get_encode())
+	    这是什么？早苗虽然英语很好，但是这个我不认识~'''.decode('UTF-8').encode(get_encode())
 			return False 
 	return True
 	
