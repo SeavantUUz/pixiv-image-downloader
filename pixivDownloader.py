@@ -1,13 +1,7 @@
 # -*- coding:utf-8 -*-
 
 ##本程序作用为：给定一个P站画师的ID，然后遍历下载那个画师所有的画
-##因为使用了linux内置的工具，所以只能在liunx环境下工作，不支持windows
 ##单线程，非多线程。
-##由于国内的网络环境，极有可能程序运行失败，建议先ping www.pixiv.net，看数据包的往返时间
-##或者traceroute -n www.pixiv.net,如果一半以上都是 *,那多半是不行的。
-##挂VPN可破……
-##这一版不支持命令行传参数，使用方法很僵硬……只能python DrawDownVer1.py 这样。
-##唯一支持的功能：支持给定一个根目录地址，程序会自动在这个根目录下存放（默认位置为本脚本的当前所在目录）
 ##不用担心图片存放会混杂……下载的图片会自动放在一个新建的文件夹里，文件夹的名字为画师的名字
 ##比如 给定了根目录地址为 /media/,而被下载画师id为61513，程序会在网站上找到画师的名字 ideolo
 ##然后建立一个叫做ideolo的文件夹，地址为 /media/ideolo/，图片在这个文件夹存放/
@@ -17,14 +11,17 @@
 ##希望退出的时候使用 Ctrl-c 就好，标准的键盘中断……
 ##只能下载图片，漫画什么的我没有匹配，书签也不行……
 ##这一版程序相当简陋，不排除有bug出现，如果发现了,请mail-> axdiaoqi220@gmail.com
-##由于后一段时间相当忙，下一版遥遥无期，更新了我会发贴的
 ##
 ##author ： 风笳(AproSanae)
 ##version : 0.1
 ##data 2012-10-20 15:24:07 
 ##PS:Sanae San Wa Dai Su Ki!!!!
+## ------------------
+##data 2013-8-7 重写了整个程序……
+##使用requests代替machinze
 
 import requests
+import wget
 import re
 import os
 import time
@@ -55,25 +52,27 @@ pattern2 = re.compile(pat2)
 # 这里通过一个正则表达式去找到当前页中所有的图片链接，返回是一个四元素的元组
 # P站老的链接可以通过下面的正则式进行匹配
 def _getOldImgUrl(page):
-    image_url = pattern.findall(page)
+    global pattern1
+    image_old_url = pattern1.findall(page)
     return image_old_url
 
 # P站使用了新的链接规则
 def _getNewImgUrl(page):
-    image_url = pattern.findall(page)
+    global pattern2
+    image_new_url = pattern2.findall(page)
     return image_new_url
 
 # 同样，通过一个正则表达式去找到指向下一页，下下一页的连接
 # 也注意，这个链接也变动过
 def _getPageUrl(page):
-    pat = r'<a href="(?id=\d+&amp;p=\d+)">'
+    pat = r'''href="(\?id=\d+&amp;p=\d+)"'''
     pattern = re.compile(pat)
     page_url = pattern.findall(page)
     ## 记住要算上第一面
     return len(page_url)
 
 ## 收集所有的图片链接
-def _collectImgUrl(session,page_urls):
+def _collectImageUrl(session,page_urls):
     image_old_links=[]
     image_new_links=[]
     for link in page_urls:
@@ -81,8 +80,6 @@ def _collectImgUrl(session,page_urls):
         image_old_links += _getOldImgUrl(r.text)
         image_new_links += _getNewImgUrl(r.text)
     return image_old_links,image_new_links
-
-#收集所有的图片链接，返回
 
 ##def _downloader(img_url,records_url,imgCount,infofile,account,basepath,OsName):
 ##	count = 0
@@ -207,26 +204,27 @@ def _collectImgUrl(session,page_urls):
 	
 			
 def main():	
-    options = _parserInput()
-    print '''
-	    早苗接受了你的输入，正在检查，马上告诉你结果~'''.decode('UTF-8').encode(typeCode)
-    print ''
-
-    if checkInput(options):	
-        account = options.account
-	password = options.password
-	OsName = options.os
-	CSID = options.CSID
-	basepath = options.basepath
-	if options.save:
-	    writeToConfig(account,password,OsName,CSID,basepath)
-    print '''
-	    早苗检查完成!马上为您连接~~'''.decode('UTF-8').encode(typeCode)
-    else:
-        print '''
-            欧尼酱有些配置填写错了哦，早苗表示不理解呢，好好看看主人大人的说明吧？'''.decode('UTF-8').encode(typeCode)
-	sys.exit(1)
-
+    ##options = _parserInput()
+##    print '''
+##	    早苗接受了你的输入，正在检查，马上告诉你结果~'''.decode('UTF-8').encode(typeCode)
+##    print ''
+##
+##    if checkInput(options):	
+##        account = options.account
+##	password = options.password
+##	OsName = options.os
+##	CSID = options.CSID
+##	basepath = options.basepath
+##	if options.save:
+##	    writeToConfig(account,password,OsName,CSID,basepath)
+##    print '''
+##	    早苗检查完成!马上为您连接~~'''.decode('UTF-8').encode(typeCode)
+##
+##    else:
+##        print '''
+##            欧尼酱有些配置填写错了哦，早苗表示不理解呢，好好看看主人大人的说明吧？'''.decode('UTF-8').encode(typeCode)
+##	sys.exit(1)
+##
     
     session = requests.Session()
     print '''
@@ -241,15 +239,16 @@ def main():
 
     data = {
             'mode':'login',
-            'pixiv_id':account,
-            'pass':password,
+            'pixiv_id':'zengli220@163.com',
+            'pass':'zllgcr1123',
             'skip':'1'}
+    CSID = '142290'
     print '''
 	    post包封装完成，准备投递'''.decode('UTF-8').encode(typeCode)
     print ''
 
     resp = session.post('https://www.secure.pixiv.net/login.php?lang=zh',data=data)
-    if resp.status_code = 200:
+    if resp.status_code == 200:
         print '''
             嗯哼～早苗已经成功登入了'''.decode('UTF-8').encode(typeCode)
         print ''
@@ -261,7 +260,7 @@ def main():
 
     index_page = 'http://www.pixiv.net/member_illust.php?id=' + CSID
     resp = session.get(index_page)
-    if not resp.status_code = 200:
+    if not resp.status_code == 200:
         print '''
             找不到这位画师的id呢，欧尼酱没弄错什么吧？'''.decode('UTF-8').encode(typeCode)
         print ''
@@ -270,7 +269,62 @@ def main():
     lenPage = _getPageUrl(resp.text)
     page_urls = [index_page]
     page_urls += [index_page+'&?p='+str(i+2) for i in range(lenPage)]
-    img_urls = _collectImageUrl(page_urls)
+    img_old_urls,img_new_urls = _collectImageUrl(session,page_urls)
+
+    
+
+def _preDownload(**kwargs):
+
+    img_old_urls = kwargs.get('img_old_urls',[])
+    img_new_urls = kwargs.get('img_new_urls',[])
+    basePath = kwargs.get('basePath','.')
+    ## 分析出作者名字
+    try:
+        authorName = img_old_urls[0][2]
+    except IndexError:
+        print ''' 
+            嗯，由于P站变更了某些规则，导致早苗无法完成作者名的自动寻找，需要欧尼酱您手动输入哦~~'''.decode('UTF-8').encode(typeCode)
+        print ''
+        print "Please input the author's name:"
+        authorName = raw_input() 
+    path = os.path.join(basePath,authorName)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    image_urls = [i[0] for i in img_old_urls]
+    image_urls += [i[0] for i in img_new_urls]
+    image_urls = set(image_urls)
+    
+    ## 一种优雅的方式
+    try:
+        with codecs.open('_downloadedImage.sanae','rb','utf-8') as f:
+            record_url = pickle.load(f)
+    except IOError:
+        record_url = []
+
+    for url in image_urls:
+        if url in record_url:
+            continue
+        else:
+            _download(session,url,path)
+            record_url.append(url)
+
+    with codecs.open('_downloaderImage.sanae','wb','utf-8') as f:
+        pickle.dump(record_url,f)
+
+    print ''' 
+            下载完了哦，您辛苦了～～早苗得回去给主人做饭了，他没有我真是什么都干不了（叹气，摊手），嗯，拜拜了～～'''.decode('UTF-8').encode(typeCode)
+    print ''
+
+
+def _download(session,image_url,basepath):
+    filename = image_url.split('/')[-1]
+    headers = {'Referer':'http://www.pixiv.net/'}
+    r = session.get(image_url,headers=headers,stream=True)
+    path = os.path.join(basepath,filename)
+    with open(path,'wb') as f:
+        for chunk in r.iter_content(1024):
+            f.write(chunk)
+
 
 
 
@@ -343,4 +397,4 @@ def main():
 
 ## if __name__ == '__main__':
 
-test()
+main()
